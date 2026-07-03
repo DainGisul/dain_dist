@@ -234,6 +234,13 @@ button.btn-slim { padding: 3px 8px; font-size: 12px; }
   align-items: center;
   gap: 6px;
   background: #fafbfc;
+  flex-wrap: wrap;  /* 좁을 때 내부 요소 다음 줄로 */
+}
+/* ── 모바일: 각 컨트롤 카드가 세로로 쌓이도록 ── */
+@media (max-width: 640px) {
+  .ctl-row > .ctl-group { flex: 1 1 100%; }
+  /* 밝기 카드에서 슬라이더가 첫 줄을 채우고, ≥151/적용은 다음 줄로 */
+  .ctl-group #bright-scale { flex: 1 1 100%; }
 }
 .ctl-group legend {
   padding: 0 6px;
