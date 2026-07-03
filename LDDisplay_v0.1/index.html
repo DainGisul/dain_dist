@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LDDisplay Serial Control (Web · Android Test)</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- 온스크린 콘솔 — 다른 스크립트보다 먼저 로드해서 이후 모든 로그를 캡처 -->
+  <script>
+    (function() {
+      const buf = [];
+      const orig = { log: console.log, warn: console.warn, error: console.error };
+      function fmt(args) {
+        return Array.from(args).map(a =>
+          typeof a === 'string' ? a : (function(){ try { return JSON.stringify(a); } catch { return String(a); } })()
+        ).join(' ');
+      }
+      function push(kind, args) {
+        buf.push({ kind, text: fmt(args), t: Date.now() });
+        if (buf.length > 500) buf.shift();
+        render();
+      }
+      let panel, list;
+      function render() {
+        if (!panel) return;
+        list.innerHTML = buf.map(e => {
+          const c = e.kind === 'error' ? '#e24b4a' : (e.kind === 'warn' ? '#f5a623' : '#d0d6e0');
+          const ts = new Date(e.t);
+          const hh = String(ts.getHours()).padStart(2,'0');
+          const mm = String(ts.getMinutes()).padStart(2,'0');
+          const ss = String(ts.getSeconds()).padStart(2,'0');
+          return `<div style="color:${c}"><span style="color:#6b7280">[${hh}:${mm}:${ss}]</span> ${escapeHtml(e.text)}</div>`;
+        }).join('');
+        list.scrollTop = list.scrollHeight;
+      }
+      function escapeHtml(s) {
+        return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]);
+      }
+      console.log = function() { orig.log.apply(console, arguments); push('log', arguments); };
+      console.warn = function() { orig.warn.apply(console, arguments); push('warn', arguments); };
+      console.error = function() { orig.error.apply(console, arguments); push('error', arguments); };
+      window.addEventListener('error', (e) => push('error', [`Uncaught: ${e.message} @ ${e.filename}:${e.lineno}`]));
+      window.addEventListener('unhandledrejection', (e) => push('error', [`Unhandled promise: ${e.reason && e.reason.message || e.reason}`]));
+
+      window.addEventListener('DOMContentLoaded', () => {
+        const btn = document.createElement('button');
+        btn.textContent = '🐞 콘솔';
+        btn.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:9999;padding:6px 10px;border-radius:20px;border:1px solid #888;background:#222;color:white;font-size:12px;';
+        document.body.appendChild(btn);
+        panel = document.createElement('div');
+        panel.style.cssText = 'position:fixed;left:0;right:0;bottom:48px;height:40vh;background:#0f1116;color:#d0d6e0;font:11px/1.4 Consolas,Menlo,monospace;padding:8px;overflow:hidden;display:none;z-index:9999;border-top:2px solid #2f6feb;';
+        list = document.createElement('div');
+        list.style.cssText = 'height:calc(100% - 22px);overflow:auto;';
+        const bar = document.createElement('div');
+        bar.style.cssText = 'display:flex;gap:6px;margin-top:4px;';
+        const clr = document.createElement('button');
+        clr.textContent = 'clear';
+        clr.style.cssText = 'padding:2px 8px;font-size:11px;';
+        clr.onclick = () => { buf.length = 0; render(); };
+        const scan = document.createElement('button');
+        scan.textContent = 'USB 스캔';
+        scan.style.cssText = 'padding:2px 8px;font-size:11px;';
+        scan.onclick = () => window.ch340Diag && window.ch340Diag.scanAny();
+        const auth = document.createElement('button');
+        auth.textContent = '승인목록';
+        auth.style.cssText = 'padding:2px 8px;font-size:11px;';
+        auth.onclick = () => window.ch340Diag && window.ch340Diag.listAuthorized();
+        bar.appendChild(clr); bar.appendChild(scan); bar.appendChild(auth);
+        panel.appendChild(list);
+        panel.appendChild(bar);
+        document.body.appendChild(panel);
+        btn.onclick = () => { panel.style.display = panel.style.display === 'none' ? 'block' : 'none'; render(); };
+        render();
+      });
+    })();
+  </script>
+</head>
+<body>
+  <div class="app">
+    <!-- ===== 헤더 ===== -->
+    <header class="app-header">
+      <h1>LDDisplay Serial Control <span class="app-ver">v0.2.0 (Web · Android Test)</span></h1>
+      <span class="fw-ver" id="fw-ver">ver.----</span>
+    </header>
+
+    <!-- ===== 지원 브라우저 경고 ===== -->
+    <div class="unsupported" id="unsupported" hidden>
+      이 브라우저는 Web Serial API도 WebUSB도 지원하지 않습니다. Chrome / Edge / Opera에서 열어주세요.
+    </div>
+
+    <!-- ===== API 선택 (Android 테스트용) ===== -->
+    <div class="api-bar">
+      <label>시리얼 API</label>
+      <select id="api-select">
+        <option value="auto" selected>자동 (모바일=CH340 / PC=네이티브)</option>
+        <option value="native">네이티브 Web Serial (PC)</option>
+        <option value="ch340">CH340 (WebUSB · Android)</option>
+        <option value="polyfill">CDC-ACM 폴리필 (참고용)</option>
+      </select>
+      <span id="api-current" class="api-current"></span>
+    </div>
+
+    <!-- ===== 연결 바 ===== -->
+    <section class="conn">
+      <label>포트</label>
+      <button id="btn-pick-port" class="btn-slim">포트 선택…</button>
+      <span id="port-name" class="port-name">(선택 안 됨)</span>
+
+      <label>속도</label>
+      <select id="baud-select">
+        <option>9600</option>
+        <option>19200</option>
+        <option>38400</option>
+        <option>57600</option>
+        <option selected>115200</option>
+        <option>230400</option>
+      </select>
+
+      <span class="hint">8-N-1 · DTR/RTS off</span>
+
+      <button id="btn-connect" class="btn-primary" disabled>연결</button>
+
+      <span class="lamp" id="lamp" data-state="off"></span>
+      <span class="lamp-label" id="lamp-label">미연결</span>
+    </section>
+
+    <!-- ===== 탭 ===== -->
+    <div class="tabs">
+      <div class="tab-buttons" role="tablist">
+        <button class="tab-btn active" data-tab="basic" role="tab">기본</button>
+        <button class="tab-btn" data-tab="siren" role="tab" hidden>사이렌</button>
+        <button class="tab-btn" data-tab="color" role="tab">색상</button>
+        <button class="tab-btn" data-tab="fwver" role="tab">FW 버전</button>
+      </div>
+
+      <!-- ===== 기본 탭 ===== -->
+      <div class="tab-panel active" data-tab="basic">
+        <div class="ctl-row">
+          <fieldset class="ctl-group flex-grow" data-group>
+            <legend>밝기 (bright)</legend>
+            <span class="range-min">0</span>
+            <input type="range" id="bright-scale" min="0" max="150" value="96" disabled />
+            <span class="range-max" id="bright-max">150</span>
+            <span class="ctl-value" id="bright-val">96</span>
+            <label class="ctl-check">
+              <input type="checkbox" id="bright-allow-high" disabled /> ≥151
+            </label>
+            <button id="bright-apply" disabled>적용</button>
+          </fieldset>
+
+          <fieldset class="ctl-group" data-group>
+            <legend>폰트</legend>
+            <button id="font-bold" class="btn-toggle" disabled>Bold</button>
+            <button id="font-normal" class="btn-toggle" disabled>Normal</button>
+          </fieldset>
+
+          <fieldset class="ctl-group" data-group>
+            <legend>스크롤 (1-5)</legend>
+            <button id="scroll-down" disabled>▼</button>
+            <span class="ctl-value" id="scroll-val">3</span>
+            <button id="scroll-up" disabled>▲</button>
+          </fieldset>
+        </div>
+      </div>
+
+      <!-- ===== 사이렌 탭 ===== -->
+      <div class="tab-panel" data-tab="siren" hidden>
+        <fieldset class="ctl-group ctl-row" data-group>
+          <legend>ton/toff (50~2000 ms), vol (1~50)</legend>
+          <label>ON</label>
+          <input type="number" id="ton-entry" min="50" max="2000" step="10" disabled />
+          <button id="ton-apply" disabled>입력</button>
+
+          <label class="ml">OFF</label>
+          <input type="number" id="toff-entry" min="50" max="2000" step="10" disabled />
+          <button id="toff-apply" disabled>입력</button>
+
+          <label class="ml">VOL</label>
+          <span class="range-min">1</span>
+          <input type="range" id="vol-scale" class="flex-grow" min="1" max="50" value="15" disabled />
+          <span class="range-max">50</span>
+          <span class="ctl-value" id="vol-val">15</span>
+          <button id="vol-apply" disabled>적용</button>
+        </fieldset>
+      </div>
+
+      <!-- ===== 색상 탭 ===== -->
+      <div class="tab-panel" data-tab="color">
+        <fieldset class="ctl-group color-group" data-group>
+          <legend>상태별 색상 (R/G/B 0~255)</legend>
+          <table class="color-table">
+            <thead>
+              <tr>
+                <th class="c-label">상태 문자</th>
+                <th>R</th><th>G</th><th>B</th>
+                <th></th>
+                <th>색상</th>
+                <th class="c-status"></th>
+              </tr>
+            </thead>
+            <tbody id="color-rows"></tbody>
+          </table>
+          <div class="color-bar">
+            <span class="hint">[전체 저장]을 눌러야 반영됩니다</span>
+            <button id="color-reload" disabled>현재값 읽기</button>
+            <button id="color-default" disabled>기본값 복원</button>
+            <button id="color-saveall" class="btn-primary" disabled>전체 저장</button>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- ===== FW 버전 탭 ===== -->
+      <div class="tab-panel" data-tab="fwver">
+        <fieldset class="ctl-group fwver-group" data-group>
+          <legend>펌웨어 버전 변경</legend>
+          <div class="fwver-row">
+            <label>비밀번호</label>
+            <input type="password" id="pw-entry" placeholder="비밀번호" />
+            <button id="pw-verify">확인</button>
+            <span class="fw-status" id="pw-status">(미확인)</span>
+          </div>
+          <div class="fwver-row">
+            <label>새 FW 버전</label>
+            <input type="text" id="newver-entry" placeholder="예: 0.2.1" maxlength="31" disabled />
+          </div>
+          <div class="fwver-row">
+            <button id="setver-apply" disabled>입력 (적용)</button>
+            <span class="fw-status" id="setver-status"></span>
+          </div>
+        </fieldset>
+      </div>
+    </div>
+
+    <!-- ===== RX 터미널 ===== -->
+    <section class="rx">
+      <div class="section-title">
+        RX (수신)
+        <button id="btn-clear-rx" class="btn-slim right">RX 지우기</button>
+      </div>
+      <pre id="rx-log" class="rx-log" aria-live="polite"></pre>
+    </section>
+
+    <!-- ===== TX 입력 ===== -->
+    <section class="tx">
+      <div class="section-title">TX (송신, 개행 CR+LF)</div>
+      <div class="tx-row">
+        <input id="tx-input" type="text" placeholder="명령어 입력 (예: status, help)" autocomplete="off" />
+        <button id="btn-tx-send" disabled>전송</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 백엔드 스크립트를 app.js 앞에 로드 -->
+  <script src="serial-polyfill.js"></script>
+  <script src="ch340-driver.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

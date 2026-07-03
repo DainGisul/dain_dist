@@ -1,2 +1,7 @@
 # dain_dist
-Daingisul Distribution Repository
+
+Daingisul Distribution Repository — 정적 웹 배포용 저장소. GitHub Pages로 서빙.
+
+## 하위 프로젝트
+
+- [`LDDisplay_v0.1/`](LDDisplay_v0.1/) — LDDisplay 시리얼 컨트롤 웹 페이지 (Web Serial / WebUSB, CH340/CH343/CDC-ACM 자동 감지)

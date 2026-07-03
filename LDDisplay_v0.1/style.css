@@ -1,0 +1,367 @@
+:root {
+  --bg: #f4f5f7;
+  --panel: #ffffff;
+  --border: #d7dae0;
+  --text: #1f2328;
+  --text-mute: #6b7280;
+  --accent: #2f6feb;
+  --accent-hover: #1f5ad0;
+  --ok: #1e8e2f;
+  --wait: #b8770f;
+  --err: #a32d2d;
+  --disabled-bg: #eceef1;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+  font-size: 14px;
+}
+
+.app {
+  max-width: 880px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ===== 헤더 ===== */
+.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 6px;
+}
+.app-header h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+.app-header .app-ver {
+  font-weight: 400;
+  color: var(--text-mute);
+  font-size: 13px;
+  margin-left: 4px;
+}
+.fw-ver { color: var(--text-mute); font-size: 13px; }
+
+/* ===== API 선택 바 (Android 테스트용) ===== */
+.api-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #eef4ff;
+  border: 1px solid #c9d9f5;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.api-bar label { color: var(--text-mute); }
+.api-bar select { flex: 0 1 auto; }
+.api-current { color: var(--accent); font-weight: 600; margin-left: auto; }
+
+/* ===== 미지원 경고 ===== */
+.unsupported {
+  padding: 10px 12px;
+  background: #fff4d6;
+  border: 1px solid #e9c96b;
+  border-radius: 6px;
+  color: #6a4a00;
+}
+
+/* ===== 공통 패널 ===== */
+section, .tabs {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-mute);
+  margin-bottom: 6px;
+}
+.section-title .right { margin-left: auto; }
+
+/* ===== 연결 바 ===== */
+.conn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.conn label {
+  color: var(--text-mute);
+  font-size: 13px;
+}
+.conn .hint {
+  color: var(--text-mute);
+  font-size: 12px;
+  margin-left: 6px;
+}
+.port-name {
+  font-family: "Consolas", "Menlo", monospace;
+  font-size: 12px;
+  color: var(--text-mute);
+  min-width: 120px;
+}
+
+select, input[type="text"], input[type="password"] {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: white;
+  font-size: 13px;
+}
+select:disabled, input:disabled {
+  background: var(--disabled-bg);
+  color: var(--text-mute);
+}
+
+button {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+button:hover:not(:disabled) { border-color: #aab0bb; background: #f7f8fa; }
+button:disabled { cursor: not-allowed; color: var(--text-mute); background: var(--disabled-bg); }
+button.btn-primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+button.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+button.btn-primary:disabled { background: var(--disabled-bg); color: var(--text-mute); border-color: var(--border); }
+button.btn-slim { padding: 3px 8px; font-size: 12px; }
+
+/* ===== 램프 ===== */
+.lamp {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #888;
+  background: #bbb;
+  margin-left: 8px;
+}
+.lamp[data-state="off"]   { background: #bbbbbb; border-color: #888; }
+.lamp[data-state="wait"]  { background: #f5a623; border-color: #b8770f; }
+.lamp[data-state="on"]    { background: #2ecc40; border-color: #1e8e2f; }
+.lamp[data-state="error"] { background: #e24b4a; border-color: #a32d2d; }
+.lamp-label { font-size: 12px; color: var(--text-mute); min-width: 44px; }
+.lamp-label[data-state="on"]    { color: var(--ok); }
+.lamp-label[data-state="wait"]  { color: var(--wait); }
+.lamp-label[data-state="error"] { color: var(--err); }
+
+/* ===== 탭 ===== */
+.tabs { padding: 0; }
+.tab-buttons {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 4px;
+}
+.tab-btn {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  padding: 8px 14px;
+  color: var(--text-mute);
+  font-size: 13px;
+}
+.tab-btn:hover:not(:disabled) { background: transparent; color: var(--text); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+.tab-panel {
+  padding: 12px;
+  display: none;
+}
+.tab-panel.active { display: block; }
+.tab-todo { color: var(--text-mute); margin: 4px 0; font-size: 13px; }
+
+/* ===== RX 터미널 ===== */
+.rx-log {
+  margin: 0;
+  height: 200px;
+  overflow: auto;
+  padding: 8px;
+  background: #0f1116;
+  color: #d0d6e0;
+  border-radius: 4px;
+  font-family: "Consolas", "Menlo", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre;
+}
+.rx-log .rx-tx  { color: #7fb3ff; }
+.rx-log .rx-info{ color: #f5a623; }
+.rx-log .rx-err { color: #e24b4a; }
+.rx-log .rx-ts  { color: #6b7280; }
+
+/* ===== 탭 컨트롤 공통 ===== */
+.ctl-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+.ctl-group {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px 8px 10px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fafbfc;
+}
+.ctl-group legend {
+  padding: 0 6px;
+  color: var(--text-mute);
+  font-size: 12px;
+}
+.ctl-group label {
+  color: var(--text-mute);
+  font-size: 12px;
+}
+.ctl-group label.ml { margin-left: 8px; }
+.flex-grow { flex: 1; min-width: 100px; }
+.range-min, .range-max { color: var(--text-mute); font-size: 11px; }
+.ctl-value {
+  min-width: 32px;
+  text-align: right;
+  font-family: "Consolas", "Menlo", monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+.ctl-check { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+.ctl-check input { margin: 0; }
+
+input[type="range"] {
+  accent-color: var(--accent);
+  height: 22px;
+}
+input[type="number"] {
+  width: 70px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: white;
+  font-size: 13px;
+  font-family: "Consolas", "Menlo", monospace;
+  text-align: right;
+}
+input[type="number"]:disabled { background: var(--disabled-bg); color: var(--text-mute); }
+
+.btn-toggle.active {
+  background: #cde6ff;
+  border-color: #7fb3ff;
+  color: #1f5ad0;
+  font-weight: 600;
+}
+
+/* ===== 색상 탭 ===== */
+.color-group { flex-direction: column; align-items: stretch; }
+.color-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+.color-table th {
+  text-align: center;
+  font-weight: 400;
+  color: var(--text-mute);
+  font-size: 11px;
+  padding: 2px 4px;
+}
+.color-table th.c-label { text-align: left; padding-left: 4px; }
+.color-table th.c-status { width: 110px; }
+.color-table td {
+  padding: 3px 4px;
+  vertical-align: middle;
+}
+.color-table td.c-label { padding-left: 4px; }
+.color-table input[type="number"] {
+  width: 64px;
+  text-align: center;
+  padding-right: 2px;   /* 스피너 화살표에 '255' 마지막 글자가 가리는 것 방지 */
+}
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #888;
+  border-radius: 3px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.color-status {
+  font-size: 12px;
+  color: var(--text-mute);
+}
+.color-status[data-state="ok"]   { color: var(--ok); }
+.color-status[data-state="wait"] { color: var(--wait); }
+.color-status[data-state="err"]  { color: var(--err); }
+.color-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.color-bar .hint {
+  flex: 1;
+  color: var(--text-mute);
+  font-size: 12px;
+}
+
+/* ===== FW 버전 탭 ===== */
+.fwver-group { flex-direction: column; align-items: stretch; }
+.fwver-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0;
+}
+.fwver-row label {
+  width: 80px;
+  color: var(--text-mute);
+  font-size: 13px;
+}
+.fwver-row input[type="password"],
+.fwver-row input[type="text"] {
+  flex: 1;
+  max-width: 260px;
+}
+.fw-status { font-size: 12px; color: var(--text-mute); }
+.fw-status[data-state="ok"]   { color: var(--ok); }
+.fw-status[data-state="wait"] { color: var(--wait); }
+.fw-status[data-state="err"]  { color: var(--err); }
+
+/* ===== TX ===== */
+.tx-row {
+  display: flex;
+  gap: 6px;
+}
+.tx-row input {
+  flex: 1;
+  font-family: "Consolas", "Menlo", monospace;
+}
