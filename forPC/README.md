@@ -5,7 +5,7 @@
 ## 파일
 
 - **[`LDDisplayControl_v0.3.0.exe`](LDDisplayControl_v0.3.0.exe)** — 메인 실행 파일 (8.6 MB, 설치 불필요)
-- **[사용설명서 (v0.3.0)](%5B%EB%B0%B0%ED%8F%AC%5DLDDisplay-%EC%84%A4%EC%A0%95%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8%EC%82%AC%EC%9A%A9%EC%84%A4%EB%AA%85%EC%84%9C_%EA%B8%B0%EB%B3%B8_v0.3.0.html)** — HTML 매뉴얼 (프로그램 다운로드 QR 포함)
+- **[사용설명서 (v0.3.0)](-배포-LDDisplay-설정프로그램사용설명서_기본_v0.3.0.html)** — HTML 매뉴얼 (프로그램 다운로드 QR 포함)
 
 ## 다운로드 QR
 
